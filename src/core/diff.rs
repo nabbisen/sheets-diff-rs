@@ -4,7 +4,7 @@ use calamine::{open_workbook, Data, Reader, Xlsx};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum CellDiffKind {
     Value,
@@ -21,7 +21,7 @@ impl fmt::Display for CellDiffKind {
 }
 
 /// main struct
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Diff {
     pub old_filepath: String,
@@ -30,21 +30,21 @@ pub struct Diff {
     pub cell_diffs: Vec<SheetCellDiff>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SheetDiff {
     pub old: Option<String>,
     pub new: Option<String>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SheetCellDiff {
     pub sheet: String,
     pub cells: Vec<CellDiff>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CellDiff {
     pub row: usize,
