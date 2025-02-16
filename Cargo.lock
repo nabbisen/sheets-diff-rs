@@ -220,7 +220,7 @@ dependencies = [
 
 [[package]]
 name = "sheets-diff"
-version = "1.0.3"
+version = "1.0.4"
 dependencies = [
  "calamine",
  "serde",

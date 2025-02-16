@@ -94,37 +94,67 @@ impl Diff {
     }
 
     /// get unified diff str
-    pub fn unified_diff(&mut self) -> String {
-        let mut ret: Vec<String> = vec![];
+    pub fn unified_diff(&mut self) -> UnifiedDiff {
+        let mut ret: Vec<UnifiedDiffLine> = vec![];
 
         if !self.sheet_diff.is_empty() {
-            ret.push(format!("--- {} (sheet names)", self.old_filepath));
-            ret.push(format!("+++ {} (sheet names)", self.new_filepath));
+            ret.push(UnifiedDiffLine {
+                kind: UnifiedDiffKind::OldTitle,
+                text: format!("{} (sheet names)", self.old_filepath),
+            });
+            ret.push(UnifiedDiffLine {
+                kind: UnifiedDiffKind::NewTitle,
+                text: format!("{} (sheet names)", self.new_filepath),
+            });
+
             self.sheet_diff.iter().for_each(|x| {
                 if let Some(sheet) = x.old.as_ref() {
-                    ret.push(format!("- {}", sheet));
+                    ret.push(UnifiedDiffLine {
+                        kind: UnifiedDiffKind::OldContent,
+                        text: sheet.to_owned(),
+                    });
                 }
                 if let Some(sheet) = x.new.as_ref() {
-                    ret.push(format!("+ {}", sheet));
+                    ret.push(UnifiedDiffLine {
+                        kind: UnifiedDiffKind::NewContent,
+                        text: sheet.to_owned(),
+                    });
                 }
             });
         }
 
         self.cell_diffs.iter().for_each(|x| {
-            ret.push(format!("--- {} [{}]", self.old_filepath, x.sheet));
-            ret.push(format!("+++ {} [{}]", self.new_filepath, x.sheet));
+            ret.push(UnifiedDiffLine {
+                kind: UnifiedDiffKind::OldTitle,
+                text: format!("{} [{}]", self.old_filepath, x.sheet),
+            });
+            ret.push(UnifiedDiffLine {
+                kind: UnifiedDiffKind::NewTitle,
+                text: format!("{} [{}]", self.new_filepath, x.sheet),
+            });
+
             x.cells.iter().for_each(|x| {
-                ret.push(format!("@@ {}({},{}) {} @@", x.addr, x.row, x.col, x.kind));
+                ret.push(UnifiedDiffLine {
+                    kind: UnifiedDiffKind::DiffPos,
+                    text: format!("{}({},{}) {}", x.addr, x.row, x.col, x.kind),
+                });
+
                 if let Some(sheet) = x.old.as_ref() {
-                    ret.push(format!("- {}", sheet));
+                    ret.push(UnifiedDiffLine {
+                        kind: UnifiedDiffKind::OldContent,
+                        text: sheet.to_owned(),
+                    });
                 }
                 if let Some(sheet) = x.new.as_ref() {
-                    ret.push(format!("+ {}", sheet));
+                    ret.push(UnifiedDiffLine {
+                        kind: UnifiedDiffKind::NewContent,
+                        text: sheet.to_owned(),
+                    });
                 }
             });
         });
 
-        ret.join("\n")
+        UnifiedDiff { lines: ret }
     }
 
     /// collect sheet diff and cell range diff
@@ -335,4 +365,55 @@ fn cell_pos_to_address(row: usize, col: usize) -> String {
     };
 
     format!("{}{}", col_char, row)
+}
+
+/// unified diff line kind
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum UnifiedDiffKind {
+    OldTitle,
+    NewTitle,
+    DiffPos,
+    OldContent,
+    NewContent,
+}
+
+/// unified diff lines
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct UnifiedDiff {
+    pub lines: Vec<UnifiedDiffLine>,
+}
+
+impl fmt::Display for UnifiedDiff {
+    /// to_string() for unified diff lines
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let str = self
+            .lines
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>();
+        write!(f, "{}", str.join("\n"))
+    }
+}
+
+/// unified diff line
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct UnifiedDiffLine {
+    pub kind: UnifiedDiffKind,
+    pub text: String,
+}
+
+impl fmt::Display for UnifiedDiffLine {
+    /// to_string() for unified diff line
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.kind {
+            UnifiedDiffKind::OldTitle => write!(f, "--- {}", self.text),
+            UnifiedDiffKind::NewTitle => write!(f, "+++ {}", self.text),
+            UnifiedDiffKind::DiffPos => write!(f, "@@ {} @@", self.text),
+            UnifiedDiffKind::OldContent => write!(f, "- {}", self.text),
+            UnifiedDiffKind::NewContent => write!(f, "+ {}", self.text),
+        }
+    }
 }
