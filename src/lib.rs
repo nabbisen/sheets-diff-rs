@@ -50,6 +50,7 @@ struct SheetCellDiff {
 struct CellDiff {
     row: usize,
     col: usize,
+    addr: String,
     old: Option<String>,
     new: Option<String>,
 }
@@ -100,7 +101,7 @@ impl Diff {
                 self.new_filepath, x.sheet, x.kind
             ));
             x.cells.iter().for_each(|x| {
-                ret.push(format!("@@ ({}, {}) @@", x.row, x.col));
+                ret.push(format!("@@ {}({},{}) @@", x.addr, x.row, x.col));
                 if let Some(sheet) = x.old.as_ref() {
                     ret.push(format!("- {}", sheet));
                 }
@@ -182,6 +183,7 @@ impl Diff {
                             cell_diffs.push(CellDiff {
                                 row,
                                 col,
+                                addr: cell_pos_to_address(row, col),
                                 old: if cell1 != &Data::Empty {
                                     Some(cell1.to_string())
                                 } else {
@@ -263,6 +265,7 @@ impl Diff {
                             cell_diffs.push(CellDiff {
                                 row,
                                 col,
+                                addr: cell_pos_to_address(row, col),
                                 old: if cell1 != &Data::Empty {
                                     Some(cell1.to_string())
                                 } else {
@@ -303,4 +306,20 @@ fn filter_same_name_sheets<'a>(
         .filter(|s| new_sheets.contains(s))
         .map(|s| s.to_owned())
         .collect()
+}
+
+/// convert (row, col) to cell address str
+fn cell_pos_to_address(row: usize, col: usize) -> String {
+    let col_letter = (col as u8 - 1) / 26;
+    let col_index = (col as u8 - 1) % 26;
+
+    let col_char = if col_letter == 0 {
+        ((b'A' + col_index) as char).to_string()
+    } else {
+        let first_char = (b'A' + col_letter - 1) as char;
+        let second_char = (b'A' + col_index) as char;
+        format!("{}{}", first_char, second_char)
+    };
+
+    format!("{}{}", col_char, row)
 }
