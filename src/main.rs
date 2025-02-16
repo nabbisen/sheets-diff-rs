@@ -1,6 +1,6 @@
 use std::{env, fs};
 
-use sheets_diff::Diff;
+use sheets_diff::core::diff::Diff;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

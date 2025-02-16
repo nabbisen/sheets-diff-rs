@@ -10,6 +10,8 @@ Collect diff between office sheets written in Rust
 
 ## Features
 
+With `.xlsx`, Microsoft Office Excel:
+
 - Get unified diff between two files
 - Get serde-ready diff
     - Note: `serde` feature is required: `cargo add sheets-diff -F serde`
@@ -17,10 +19,11 @@ Collect diff between office sheets written in Rust
 ## Simple run
 
 ```console
-$ # via executable
+$ # via executable available in Releases
 $ ./sheets-diff <file1> <file2>
 
 $ # via cargo
+$ # first `cargo add sheets-diff`
 $ cargo run -- <file1> <file2>
 ```
 
