@@ -57,25 +57,24 @@ struct CellDiff {
 impl Diff {
     /// init
     pub fn new(old_filepath: &str, new_filepath: &str) -> Self {
-        Diff {
+        let mut ret = Diff {
             old_filepath: old_filepath.to_owned(),
             new_filepath: new_filepath.to_owned(),
             sheet_diff: vec![],
             cell_diffs: vec![],
-        }
+        };
+        ret.collect_diff();
+        ret
     }
 
     /// get serde-ready diff
     /// #[cfg(feature = "serde")]
     pub fn diff(&mut self) -> Diff {
-        self.collect_diff();
         self.clone()
     }
 
     /// get unified diff str
     pub fn unified_diff(&mut self) -> String {
-        self.collect_diff();
-
         let mut ret: Vec<String> = vec![];
 
         if !self.sheet_diff.is_empty() {
