@@ -1,0 +1,35 @@
+[package]
+name = "sheets-diff"
+version = "1.0.0"
+edition = "2021"
+
+description = "Collect diff between office sheets"
+authors = ["nabbisen <nabbisen@scqr.net>"]
+license = "Apache-2.0"
+
+categories = ["development-tools", "command-line-utilities", "parsing", "data-structures"]
+keywords = ["excel", "xlsx", "compare", "diff", "cli"]
+repository = "https://github.com/nabbisen/sheets-diff-rs"
+readme = "README.md"
+rust-version = "1.81.0"
+
+[profile.release]     # shrink executable size
+opt-level = "z"
+lto = true
+# panic = "abort"
+strip = true
+codegen-units = 1
+
+[profile.dev]         # to reasonably improve productivity
+opt-level = 1         # slightly optimize
+lto = false           # disable link-time optimizations
+# strip = "debuginfo" # reduce size
+# incremental = true
+
+[features]
+default = []
+serde_derive = ["serde"]
+
+[dependencies]
+calamine = "^0.26"
+serde = { version = "1", features = ["derive"], optional = true }
