@@ -4,7 +4,7 @@ use calamine::{open_workbook, Data, Reader, Xlsx};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 enum CellDiffKind {
     Value,
@@ -40,7 +40,6 @@ struct SheetDiff {
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 struct SheetCellDiff {
-    kind: CellDiffKind,
     sheet: String,
     cells: Vec<CellDiff>,
 }
@@ -51,6 +50,7 @@ struct CellDiff {
     row: usize,
     col: usize,
     addr: String,
+    kind: CellDiffKind,
     old: Option<String>,
     new: Option<String>,
 }
@@ -64,7 +64,26 @@ impl Diff {
             sheet_diff: vec![],
             cell_diffs: vec![],
         };
+
         ret.collect_diff();
+
+        ret.cell_diffs.sort_by(|a, b| a.sheet.cmp(&b.sheet));
+
+        let mut merged_cell_diffs: Vec<SheetCellDiff> = vec![];
+        ret.cell_diffs.iter().for_each(|a| {
+            let found = merged_cell_diffs.iter_mut().find(|b| b.sheet == a.sheet);
+            if let Some(found) = found {
+                found.cells.extend(a.cells.clone());
+            } else {
+                merged_cell_diffs.push(a.clone());
+            }
+        });
+        merged_cell_diffs.iter_mut().for_each(|x| {
+            x.cells
+                .sort_by(|a, b| a.addr.cmp(&b.addr).then_with(|| a.kind.cmp(&b.kind)));
+        });
+        ret.cell_diffs = merged_cell_diffs;
+
         ret
     }
 
@@ -92,16 +111,10 @@ impl Diff {
         }
 
         self.cell_diffs.iter().for_each(|x| {
-            ret.push(format!(
-                "--- {} [{}] ({})",
-                self.old_filepath, x.sheet, x.kind
-            ));
-            ret.push(format!(
-                "+++ {} [{}] ({})",
-                self.new_filepath, x.sheet, x.kind
-            ));
+            ret.push(format!("--- {} [{}]", self.old_filepath, x.sheet));
+            ret.push(format!("+++ {} [{}]", self.new_filepath, x.sheet));
             x.cells.iter().for_each(|x| {
-                ret.push(format!("@@ {}({},{}) @@", x.addr, x.row, x.col));
+                ret.push(format!("@@ {}({},{}) {} @@", x.addr, x.row, x.col, x.kind));
                 if let Some(sheet) = x.old.as_ref() {
                     ret.push(format!("- {}", sheet));
                 }
@@ -184,6 +197,7 @@ impl Diff {
                                 row,
                                 col,
                                 addr: cell_pos_to_address(row, col),
+                                kind: CellDiffKind::Value,
                                 old: if cell1 != &Data::Empty {
                                     Some(cell1.to_string())
                                 } else {
@@ -202,7 +216,6 @@ impl Diff {
                 if !cell_diffs.is_empty() {
                     let sheet_cell_diff = SheetCellDiff {
                         sheet: sheet.to_owned(),
-                        kind: CellDiffKind::Value,
                         cells: cell_diffs,
                     };
                     self.cell_diffs.push(sheet_cell_diff);
@@ -266,6 +279,7 @@ impl Diff {
                                 row,
                                 col,
                                 addr: cell_pos_to_address(row, col),
+                                kind: CellDiffKind::Formula,
                                 old: if cell1 != &Data::Empty {
                                     Some(cell1.to_string())
                                 } else {
@@ -284,7 +298,6 @@ impl Diff {
                 if !cell_diffs.is_empty() {
                     let sheet_cell_diff = SheetCellDiff {
                         sheet: sheet.to_owned(),
-                        kind: CellDiffKind::Formula,
                         cells: cell_diffs,
                     };
                     self.cell_diffs.push(sheet_cell_diff);

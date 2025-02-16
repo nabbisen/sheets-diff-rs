@@ -31,15 +31,13 @@ $ cargo run -- <file1> <file2>
 +++ ./file2.xlsx (sheet names)
 - RemovedSheet
 + AddedSheet
---- ./file1.xlsx [Sheet1] (value)
-+++ ./file2.xlsx [Sheet1] (value)
-@@ (1, 1) @@
+--- ./file1.xlsx [Sheet1]
++++ ./file2.xlsx [Sheet1]
+@@ A1(1,1) value @@
 - 1
-+ 2
---- ./file1.xlsx [Sheet1] (formula)
-+++ ./file2.xlsx [Sheet1] (formula)
-@@ (10, 4) @@
+@@ D10(10,4) formula @@
 - 1+1
++ 2*4
 ```
 
 ## Acknowledgements
