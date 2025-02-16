@@ -4,3 +4,6 @@ target/
 **/*.rs.bk
 
 *.pdb
+
+# custom below
+/tests/local/**/*.xlsx
