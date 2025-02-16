@@ -48,8 +48,8 @@ struct SheetCellDiff {
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 struct CellDiff {
-    row: u32,
-    col: u32,
+    row: usize,
+    col: usize,
     old: Option<String>,
     new: Option<String>,
 }
@@ -168,22 +168,20 @@ impl Diff {
             ) {
                 let mut cell_diffs: Vec<CellDiff> = vec![];
 
-                let max_rows = range1.height().max(range2.height());
-                let max_cols = range1.width().max(range2.width());
+                let max_rows = range1.height().max(range2.height()) as u32;
+                let max_cols = range1.width().max(range2.width()) as u32;
 
                 for row in 0..max_rows {
                     for col in 0..max_cols {
-                        let cell1 = range1
-                            .get_value((row as u32, col as u32))
-                            .unwrap_or(&Data::Empty);
-                        let cell2 = range2
-                            .get_value((row as u32, col as u32))
-                            .unwrap_or(&Data::Empty);
+                        let cell1 = range1.get_value((row, col)).unwrap_or(&Data::Empty);
+                        let cell2 = range2.get_value((row, col)).unwrap_or(&Data::Empty);
 
                         if cell1 != cell2 {
+                            let row = (row + 1) as usize;
+                            let col = (col + 1) as usize;
                             cell_diffs.push(CellDiff {
-                                row: (row + 1) as u32,
-                                col: (col + 1) as u32,
+                                row,
+                                col,
                                 old: if cell1 != &Data::Empty {
                                     Some(cell1.to_string())
                                 } else {
@@ -250,19 +248,21 @@ impl Diff {
 
                 for row in start_row..(end_row + 1) {
                     for col in start_col..(end_col + 1) {
-                        let cell1 = match range1.get_value((row as u32, col as u32)) {
+                        let cell1 = match range1.get_value((row, col)) {
                             Some(x) => &Data::String(x.to_string()),
                             None => &Data::Empty,
                         };
-                        let cell2 = match range2.get_value((row as u32, col as u32)) {
+                        let cell2 = match range2.get_value((row, col)) {
                             Some(x) => &Data::String(x.to_string()),
                             None => &Data::Empty,
                         };
 
                         if cell1 != cell2 {
+                            let row = (row + 1) as usize;
+                            let col = (col + 1) as usize;
                             cell_diffs.push(CellDiff {
-                                row: (row + 1) as u32,
-                                col: (col + 1) as u32,
+                                row,
+                                col,
                                 old: if cell1 != &Data::Empty {
                                     Some(cell1.to_string())
                                 } else {
