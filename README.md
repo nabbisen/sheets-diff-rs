@@ -17,7 +17,16 @@ Collect diff between office sheets written in Rust
 ## Simple run
 
 ```console
+$ # via executable
+$ ./sheets-diff <file1> <file2>
+
+$ # via cargo
 $ cargo run -- <file1> <file2>
+```
+
+### Output example
+
+```console
 --- ./file1.xlsx (sheet names)
 +++ ./file2.xlsx (sheet names)
 - RemovedSheet
