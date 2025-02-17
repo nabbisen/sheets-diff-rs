@@ -1,4 +1,4 @@
-# sheets-diff-rs
+# sheets-diff
 
 Collect diff between office sheets written in Rust
 
