@@ -206,21 +206,21 @@ impl Diff {
         same_name_sheets: &Vec<String>,
     ) {
         for sheet in same_name_sheets {
-            if let (Ok(range1), Ok(range2)) = (
+            if let (Ok(old_range), Ok(new_range)) = (
                 old_workbook.worksheet_range(sheet),
                 new_workbook.worksheet_range(sheet),
             ) {
                 let mut cell_diffs: Vec<CellDiff> = vec![];
 
-                let max_rows = range1.height().max(range2.height()) as u32;
-                let max_cols = range1.width().max(range2.width()) as u32;
+                let max_rows = old_range.height().max(new_range.height()) as u32;
+                let max_cols = old_range.width().max(new_range.width()) as u32;
 
                 for row in 0..max_rows {
                     for col in 0..max_cols {
-                        let cell1 = range1.get_value((row, col)).unwrap_or(&Data::Empty);
-                        let cell2 = range2.get_value((row, col)).unwrap_or(&Data::Empty);
+                        let old_cell = old_range.get_value((row, col)).unwrap_or(&Data::Empty);
+                        let new_cell = new_range.get_value((row, col)).unwrap_or(&Data::Empty);
 
-                        if cell1 != cell2 {
+                        if old_cell != new_cell {
                             let row = (row + 1) as usize;
                             let col = (col + 1) as usize;
                             cell_diffs.push(CellDiff {
@@ -228,13 +228,13 @@ impl Diff {
                                 col,
                                 addr: cell_pos_to_address(row, col),
                                 kind: CellDiffKind::Value,
-                                old: if cell1 != &Data::Empty {
-                                    Some(cell1.to_string())
+                                old: if old_cell != &Data::Empty {
+                                    Some(old_cell.to_string())
                                 } else {
                                     None
                                 },
-                                new: if cell2 != &Data::Empty {
-                                    Some(cell2.to_string())
+                                new: if new_cell != &Data::Empty {
+                                    Some(new_cell.to_string())
                                 } else {
                                     None
                                 },
@@ -264,45 +264,45 @@ impl Diff {
         same_name_sheets: &Vec<String>,
     ) {
         for sheet in same_name_sheets {
-            if let (Ok(range1), Ok(range2)) = (
+            if let (Ok(old_range), Ok(new_range)) = (
                 old_workbook.worksheet_formula(sheet),
                 new_workbook.worksheet_formula(sheet),
             ) {
                 let mut cell_diffs: Vec<CellDiff> = vec![];
 
-                let (range1_start_row, range1_start_col) = match range1.start() {
+                let (old_start_row, old_start_col) = match old_range.start() {
                     Some((row, col)) => (row, col),
                     None => (u32::MAX, u32::MAX),
                 };
-                let (range2_start_row, range2_start_col) = match range2.start() {
+                let (new_start_row, new_start_col) = match new_range.start() {
                     Some((row, col)) => (row, col),
                     None => (u32::MAX, u32::MAX),
                 };
-                let (range1_end_row, range1_end_col) = match range1.end() {
+                let (old_end_row, old_end_col) = match old_range.end() {
                     Some((row, col)) => (row, col),
                     None => (u32::MIN, u32::MIN),
                 };
-                let (range2_end_row, range2_end_col) = match range2.end() {
+                let (new_end_row, new_end_col) = match new_range.end() {
                     Some((row, col)) => (row, col),
                     None => (u32::MIN, u32::MIN),
                 };
-                let start_row = range1_start_row.min(range2_start_row);
-                let start_col = range1_start_col.min(range2_start_col);
-                let end_row = range1_end_row.max(range2_end_row);
-                let end_col = range1_end_col.max(range2_end_col);
+                let start_row = old_start_row.min(new_start_row);
+                let start_col = old_start_col.min(new_start_col);
+                let end_row = old_end_row.max(new_end_row);
+                let end_col = old_end_col.max(new_end_col);
 
                 for row in start_row..(end_row + 1) {
                     for col in start_col..(end_col + 1) {
-                        let cell1 = match range1.get_value((row, col)) {
+                        let old_cell = match old_range.get_value((row, col)) {
                             Some(x) => &Data::String(x.to_string()),
                             None => &Data::Empty,
                         };
-                        let cell2 = match range2.get_value((row, col)) {
+                        let new_cell = match new_range.get_value((row, col)) {
                             Some(x) => &Data::String(x.to_string()),
                             None => &Data::Empty,
                         };
 
-                        if cell1 != cell2 {
+                        if old_cell != new_cell {
                             let row = (row + 1) as usize;
                             let col = (col + 1) as usize;
                             cell_diffs.push(CellDiff {
@@ -310,13 +310,13 @@ impl Diff {
                                 col,
                                 addr: cell_pos_to_address(row, col),
                                 kind: CellDiffKind::Formula,
-                                old: if cell1 != &Data::Empty {
-                                    Some(cell1.to_string())
+                                old: if old_cell != &Data::Empty {
+                                    Some(old_cell.to_string())
                                 } else {
                                     None
                                 },
-                                new: if cell2 != &Data::Empty {
-                                    Some(cell2.to_string())
+                                new: if new_cell != &Data::Empty {
+                                    Some(new_cell.to_string())
                                 } else {
                                     None
                                 },
