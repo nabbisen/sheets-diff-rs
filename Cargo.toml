@@ -1,6 +1,6 @@
 [package]
 name = "sheets-diff"
-version = "1.0.5"
+version = "1.0.6"
 edition = "2021"
 
 description = "Collect diff between office sheets"

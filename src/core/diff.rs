@@ -212,8 +212,10 @@ impl Diff {
             ) {
                 let mut cell_diffs: Vec<CellDiff> = vec![];
 
-                let max_rows = old_range.height().max(new_range.height()) as u32;
-                let max_cols = old_range.width().max(new_range.width()) as u32;
+                let (old_rows, old_cols) = old_range.get_size();
+                let (new_rows, new_cols) = new_range.get_size();
+                let max_rows = old_rows.max(new_rows) as u32;
+                let max_cols = old_cols.max(new_cols) as u32;
 
                 for row in 0..max_rows {
                     for col in 0..max_cols {
