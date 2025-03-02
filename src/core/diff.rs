@@ -212,13 +212,15 @@ impl Diff {
             ) {
                 let mut cell_diffs: Vec<CellDiff> = vec![];
 
-                let (old_rows, old_cols) = old_range.get_size();
-                let (new_rows, new_cols) = new_range.get_size();
-                let max_rows = old_rows.max(new_rows) as u32;
-                let max_cols = old_cols.max(new_cols) as u32;
+                let (start_row, start_col, end_row, end_col) = diff_range(
+                    old_range.start(),
+                    new_range.start(),
+                    old_range.end(),
+                    new_range.end(),
+                );
 
-                for row in 0..max_rows {
-                    for col in 0..max_cols {
+                for row in start_row..end_row {
+                    for col in start_col..end_col {
                         let old_cell = old_range.get_value((row, col)).unwrap_or(&Data::Empty);
                         let new_cell = new_range.get_value((row, col)).unwrap_or(&Data::Empty);
 
@@ -272,29 +274,15 @@ impl Diff {
             ) {
                 let mut cell_diffs: Vec<CellDiff> = vec![];
 
-                let (old_start_row, old_start_col) = match old_range.start() {
-                    Some((row, col)) => (row, col),
-                    None => (u32::MAX, u32::MAX),
-                };
-                let (new_start_row, new_start_col) = match new_range.start() {
-                    Some((row, col)) => (row, col),
-                    None => (u32::MAX, u32::MAX),
-                };
-                let (old_end_row, old_end_col) = match old_range.end() {
-                    Some((row, col)) => (row, col),
-                    None => (u32::MIN, u32::MIN),
-                };
-                let (new_end_row, new_end_col) = match new_range.end() {
-                    Some((row, col)) => (row, col),
-                    None => (u32::MIN, u32::MIN),
-                };
-                let start_row = old_start_row.min(new_start_row);
-                let start_col = old_start_col.min(new_start_col);
-                let end_row = old_end_row.max(new_end_row);
-                let end_col = old_end_col.max(new_end_col);
+                let (start_row, start_col, end_row, end_col) = diff_range(
+                    old_range.start(),
+                    new_range.start(),
+                    old_range.end(),
+                    new_range.end(),
+                );
 
-                for row in start_row..(end_row + 1) {
-                    for col in start_col..(end_col + 1) {
+                for row in start_row..end_row {
+                    for col in start_col..end_col {
                         let old_cell = match old_range.get_value((row, col)) {
                             Some(x) => &Data::String(x.to_string()),
                             None => &Data::Empty,
@@ -351,6 +339,38 @@ fn filter_same_name_sheets<'a>(
         .filter(|s| new_sheets.contains(s))
         .map(|s| s.to_owned())
         .collect()
+}
+
+/// get range to compare
+/// return: (start_row, start_col, end_row, end_col)
+fn diff_range<'a>(
+    old_start: Option<(u32, u32)>,
+    new_start: Option<(u32, u32)>,
+    old_end: Option<(u32, u32)>,
+    new_end: Option<(u32, u32)>,
+) -> (u32, u32, u32, u32) {
+    let (old_start_row, old_start_col) = match old_start {
+        Some((row, col)) => (row, col),
+        None => (u32::MAX, u32::MAX),
+    };
+    let (new_start_row, new_start_col) = match new_start {
+        Some((row, col)) => (row, col),
+        None => (u32::MAX, u32::MAX),
+    };
+    let (old_end_row, old_end_col) = match old_end {
+        Some((row, col)) => (row, col),
+        None => (u32::MIN, u32::MIN),
+    };
+    let (new_end_row, new_end_col) = match new_end {
+        Some((row, col)) => (row, col),
+        None => (u32::MIN, u32::MIN),
+    };
+    let start_row = old_start_row.min(new_start_row);
+    let start_col = old_start_col.min(new_start_col);
+    let end_row = old_end_row.max(new_end_row);
+    let end_col = old_end_col.max(new_end_col);
+
+    (start_row, start_col, end_row + 1, end_col + 1)
 }
 
 /// convert (row, col) to cell address str
