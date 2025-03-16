@@ -3,9 +3,9 @@
 Collect diff between office sheets written in Rust
 
 [![crates.io](https://img.shields.io/crates/v/sheets-diff?label=latest)](https://crates.io/crates/sheets-diff)
-[![Documentation](https://docs.rs/sheets-diff/badge.svg?version=latest)](https://docs.rs/sheets-diff/latest)
-[![Dependency Status](https://deps.rs/crate/sheets-diff/latest/status.svg)](https://deps.rs/crate/sheets-diff/latest)
-[![Releases Workflow](https://github.com/nabbisen/sheets-diff-rs/actions/workflows/release-executable.yaml/badge.svg)](https://github.com/nabbisen/sheets-diff-rs/actions/workflows/)
+[![Documentation](https://docs.rs/sheets-diff/badge.svg?version=latest)](https://docs.rs/sheets-diff)
+[![Dependency Status](https://deps.rs/crate/sheets-diff/latest/status.svg)](https://deps.rs/crate/sheets-diff)
+[![Releases Workflow](https://github.com/nabbisen/sheets-diff-rs/actions/workflows/release-executable.yaml/badge.svg)](https://github.com/nabbisen/sheets-diff-rs/actions/workflows/release-executable.yaml)
 [![License](https://img.shields.io/github/license/nabbisen/sheets-diff-rs)](https://github.com/nabbisen/sheets-diff-rs/blob/main/LICENSE)
 
 ## Features
