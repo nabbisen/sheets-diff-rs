@@ -1,4 +1,4 @@
-use core::fmt;
+use std::fmt;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -9,6 +9,13 @@ use super::diff::Diff;
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct UnifiedDiff {
+    pub content: Vec<UnifiedDiffContent>,
+}
+
+/// formatted unified diff
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct FormattedUnifiedDiff {
     pub content: Vec<UnifiedDiffContent>,
 }
 
@@ -54,29 +61,49 @@ pub struct SplitUnifiedDiffLine {
     pub text: Option<String>,
 }
 
-impl fmt::Display for UnifiedDiff {
-    /// generate string in unified format
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.content.iter().for_each(|x| {
-            let _ = writeln!(f, "--- {}", &x.old_title);
-            let _ = writeln!(f, "+++ {}", &x.new_title);
-            x.lines.iter().for_each(|x| {
-                if let Some(pos) = &x.pos {
-                    let _ = writeln!(f, "@@ {} @@", pos);
-                }
-                if let Some(old) = &x.old {
-                    let _ = writeln!(f, "- {}", old);
-                }
-                if let Some(new) = &x.new {
-                    let _ = writeln!(f, "+ {}", new);
-                }
-            });
-        });
-        Ok(())
-    }
-}
-
 impl UnifiedDiff {
+    /// convert each string to one in unified format
+    pub fn format(&self) -> FormattedUnifiedDiff {
+        let content: Vec<UnifiedDiffContent> = self
+            .content
+            .iter()
+            .map(|x| {
+                let old_title = format!("--- {}", &x.old_title);
+                let new_title = format!("+++ {}", &x.new_title);
+
+                let lines: Vec<UnifiedDiffLine> = x
+                    .lines
+                    .iter()
+                    .map(|x| {
+                        let pos = if let Some(pos) = &x.pos {
+                            Some(format!("@@ {} @@", pos))
+                        } else {
+                            None
+                        };
+                        let old = if let Some(old) = &x.old {
+                            Some(format!("- {}", old))
+                        } else {
+                            None
+                        };
+                        let new = if let Some(new) = &x.new {
+                            Some(format!("+ {}", new))
+                        } else {
+                            None
+                        };
+                        UnifiedDiffLine { pos, old, new }
+                    })
+                    .collect();
+
+                UnifiedDiffContent {
+                    old_title,
+                    new_title,
+                    lines,
+                }
+            })
+            .collect();
+        FormattedUnifiedDiff { content }
+    }
+
     /// split into old / new parts
     pub fn split(&self) -> SplitUnifiedDiff {
         let old: Vec<SplitUnifiedDiffContent> = self
@@ -131,6 +158,28 @@ impl UnifiedDiff {
             .collect();
 
         SplitUnifiedDiff { old, new }
+    }
+}
+
+impl fmt::Display for FormattedUnifiedDiff {
+    /// generate string in unified format
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.content.iter().for_each(|x| {
+            let _ = writeln!(f, "{}", &x.old_title);
+            let _ = writeln!(f, "{}", &x.new_title);
+            x.lines.iter().for_each(|x| {
+                if let Some(pos) = &x.pos {
+                    let _ = writeln!(f, "{}", pos);
+                }
+                if let Some(old) = &x.old {
+                    let _ = writeln!(f, "{}", old);
+                }
+                if let Some(new) = &x.new {
+                    let _ = writeln!(f, "{}", new);
+                }
+            });
+        });
+        Ok(())
     }
 }
 

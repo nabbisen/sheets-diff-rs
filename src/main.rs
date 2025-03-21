@@ -7,7 +7,7 @@ fn main() {
     let (old_filepath, new_filepath) = filepaths(args.as_ref());
 
     let diff = Diff::new(old_filepath, new_filepath);
-    println!("{}", unified_diff(&diff));
+    println!("{}", unified_diff(&diff).format());
 }
 
 fn filepaths<'a>(args: &'a Vec<String>) -> (&'a str, &'a str) {

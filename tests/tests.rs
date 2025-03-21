@@ -39,7 +39,7 @@ mod tests {
 "#;
 
         let diff = sheets_diff::core::diff::Diff::new(OLD_FILEPATH, NEW_FILEPATH);
-        let target = unified_diff(&diff);
+        let target = unified_diff(&diff).format();
         assert_eq!(format!("{}", target), EXPECT);
     }
 }
