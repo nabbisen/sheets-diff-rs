@@ -4,6 +4,8 @@ use calamine::{open_workbook, Data, Reader, Xlsx};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+use super::utils::{cell_pos_to_address, diff_range, filter_same_name_sheets};
+
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum CellDiffKind {
@@ -91,70 +93,6 @@ impl Diff {
     /// #[cfg(feature = "serde")]
     pub fn diff(&mut self) -> Diff {
         self.clone()
-    }
-
-    /// get unified diff str
-    pub fn unified_diff(&mut self) -> UnifiedDiff {
-        let mut ret: Vec<UnifiedDiffLine> = vec![];
-
-        if !self.sheet_diff.is_empty() {
-            ret.push(UnifiedDiffLine {
-                kind: UnifiedDiffKind::OldTitle,
-                text: format!("{} (sheet names)", self.old_filepath),
-            });
-            ret.push(UnifiedDiffLine {
-                kind: UnifiedDiffKind::NewTitle,
-                text: format!("{} (sheet names)", self.new_filepath),
-            });
-
-            self.sheet_diff.iter().for_each(|x| {
-                if let Some(sheet) = x.old.as_ref() {
-                    ret.push(UnifiedDiffLine {
-                        kind: UnifiedDiffKind::OldContent,
-                        text: sheet.to_owned(),
-                    });
-                }
-                if let Some(sheet) = x.new.as_ref() {
-                    ret.push(UnifiedDiffLine {
-                        kind: UnifiedDiffKind::NewContent,
-                        text: sheet.to_owned(),
-                    });
-                }
-            });
-        }
-
-        self.cell_diffs.iter().for_each(|x| {
-            ret.push(UnifiedDiffLine {
-                kind: UnifiedDiffKind::OldTitle,
-                text: format!("{} [{}]", self.old_filepath, x.sheet),
-            });
-            ret.push(UnifiedDiffLine {
-                kind: UnifiedDiffKind::NewTitle,
-                text: format!("{} [{}]", self.new_filepath, x.sheet),
-            });
-
-            x.cells.iter().for_each(|x| {
-                ret.push(UnifiedDiffLine {
-                    kind: UnifiedDiffKind::DiffPos,
-                    text: format!("{}({},{}) {}", x.addr, x.row, x.col, x.kind),
-                });
-
-                if let Some(sheet) = x.old.as_ref() {
-                    ret.push(UnifiedDiffLine {
-                        kind: UnifiedDiffKind::OldContent,
-                        text: sheet.to_owned(),
-                    });
-                }
-                if let Some(sheet) = x.new.as_ref() {
-                    ret.push(UnifiedDiffLine {
-                        kind: UnifiedDiffKind::NewContent,
-                        text: sheet.to_owned(),
-                    });
-                }
-            });
-        });
-
-        UnifiedDiff { lines: ret }
     }
 
     /// collect sheet diff and cell range diff
@@ -325,117 +263,6 @@ impl Diff {
             } else {
                 println!("Failed to read sheet: {}", sheet);
             }
-        }
-    }
-}
-
-/// filter sheets whose name is equal
-fn filter_same_name_sheets<'a>(
-    old_sheets: &'a Vec<String>,
-    new_sheets: &'a Vec<String>,
-) -> Vec<String> {
-    old_sheets
-        .iter()
-        .filter(|s| new_sheets.contains(s))
-        .map(|s| s.to_owned())
-        .collect()
-}
-
-/// get range to compare
-/// return: (start_row, start_col, end_row, end_col)
-fn diff_range<'a>(
-    old_start: Option<(u32, u32)>,
-    new_start: Option<(u32, u32)>,
-    old_end: Option<(u32, u32)>,
-    new_end: Option<(u32, u32)>,
-) -> (u32, u32, u32, u32) {
-    let (old_start_row, old_start_col) = match old_start {
-        Some((row, col)) => (row, col),
-        None => (u32::MAX, u32::MAX),
-    };
-    let (new_start_row, new_start_col) = match new_start {
-        Some((row, col)) => (row, col),
-        None => (u32::MAX, u32::MAX),
-    };
-    let (old_end_row, old_end_col) = match old_end {
-        Some((row, col)) => (row, col),
-        None => (u32::MIN, u32::MIN),
-    };
-    let (new_end_row, new_end_col) = match new_end {
-        Some((row, col)) => (row, col),
-        None => (u32::MIN, u32::MIN),
-    };
-    let start_row = old_start_row.min(new_start_row);
-    let start_col = old_start_col.min(new_start_col);
-    let end_row = old_end_row.max(new_end_row);
-    let end_col = old_end_col.max(new_end_col);
-
-    (start_row, start_col, end_row + 1, end_col + 1)
-}
-
-/// convert (row, col) to cell address str
-fn cell_pos_to_address(row: usize, col: usize) -> String {
-    let col_letter = (col as u8 - 1) / 26;
-    let col_index = (col as u8 - 1) % 26;
-
-    let col_char = if col_letter == 0 {
-        ((b'A' + col_index) as char).to_string()
-    } else {
-        let first_char = (b'A' + col_letter - 1) as char;
-        let second_char = (b'A' + col_index) as char;
-        format!("{}{}", first_char, second_char)
-    };
-
-    format!("{}{}", col_char, row)
-}
-
-/// unified diff line kind
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum UnifiedDiffKind {
-    OldTitle,
-    NewTitle,
-    DiffPos,
-    OldContent,
-    NewContent,
-}
-
-/// unified diff lines
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct UnifiedDiff {
-    pub lines: Vec<UnifiedDiffLine>,
-}
-
-impl fmt::Display for UnifiedDiff {
-    /// to_string() for unified diff lines
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let str = self
-            .lines
-            .iter()
-            .map(|x| x.to_string())
-            .collect::<Vec<String>>();
-        write!(f, "{}", str.join("\n"))
-    }
-}
-
-/// unified diff line
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct UnifiedDiffLine {
-    pub kind: UnifiedDiffKind,
-    pub text: String,
-}
-
-impl fmt::Display for UnifiedDiffLine {
-    /// to_string() for unified diff line
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.kind {
-            UnifiedDiffKind::OldTitle => write!(f, "--- {}", self.text),
-            UnifiedDiffKind::NewTitle => write!(f, "+++ {}", self.text),
-            UnifiedDiffKind::DiffPos => write!(f, "@@ {} @@", self.text),
-            UnifiedDiffKind::OldContent => write!(f, "- {}", self.text),
-            UnifiedDiffKind::NewContent => write!(f, "+ {}", self.text),
         }
     }
 }

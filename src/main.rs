@@ -1,12 +1,13 @@
 use std::{env, fs};
 
-use sheets_diff::core::diff::Diff;
+use sheets_diff::core::{diff::Diff, unified_format::unified_diff};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     let (old_filepath, new_filepath) = filepaths(args.as_ref());
 
-    println!("{}", Diff::new(old_filepath, new_filepath).unified_diff());
+    let diff = Diff::new(old_filepath, new_filepath);
+    println!("{}", unified_diff(&diff));
 }
 
 fn filepaths<'a>(args: &'a Vec<String>) -> (&'a str, &'a str) {

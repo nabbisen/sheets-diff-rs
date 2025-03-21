@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    use sheets_diff::core::unified_format::unified_diff;
+
     #[test]
     fn it_works() {
         const OLD_FILEPATH: &str = "tests/fixtures/file1.xlsx";
@@ -33,9 +35,11 @@ mod tests {
 @@ D12(12,4) formula @@
 + "a"&123
 @@ W55(55,23) value @@
-+ っｓ"#;
++ っｓ
+"#;
 
-        let target = sheets_diff::core::diff::Diff::new(OLD_FILEPATH, NEW_FILEPATH).unified_diff();
+        let diff = sheets_diff::core::diff::Diff::new(OLD_FILEPATH, NEW_FILEPATH);
+        let target = unified_diff(&diff);
         assert_eq!(format!("{}", target), EXPECT);
     }
 }
