@@ -1,6 +1,6 @@
 [package]
 name = "sheets-diff"
-version = "1.1.1"
+version = "1.1.2"
 edition = "2021"
 
 description = "Collect diff between office sheets"
@@ -31,5 +31,5 @@ default = []
 serde_derive = ["serde"]
 
 [dependencies]
-calamine = "^0.26"
+calamine = "0"
 serde = { version = "1", features = ["derive"], optional = true }
